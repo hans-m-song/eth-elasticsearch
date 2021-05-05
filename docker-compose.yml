@@ -36,6 +36,9 @@ services:
     container_name: eth-relay
     build:
       context: ./eth-relay
+    environment: 
+      ELASTICSEARCH_ADDR: localhost:9200
+      ETH_RPC_ADDR: ${ETH_RPC_ADDR}
     networks:
       - elasticnet
     depends_on:

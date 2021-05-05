@@ -9,4 +9,4 @@ COPY tsconfig.json ./
 COPY src ./src
 RUN npm run compile
 
-# ENTRYPOINT [ "node", "dist" ]
+ENTRYPOINT [ "node", "dist/index" ]
