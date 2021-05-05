@@ -18,17 +18,15 @@ console.log(
     constants.ETH_RPC_ADDR,
     constants.RELAY_START_BLOCK
   );
+
   const es = new ElasticSearchDriver(constants.ELASTICSEARCH_ADDR);
 
   await es.ping();
 
-  const run = async () => {
+  while (true) {
     const data = await eth.poll();
     await es.submit(data);
 
     await sleep(constants.RELAY_INTERVAL);
-    await run();
-  };
-
-  await run();
+  }
 })();

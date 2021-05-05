@@ -12,7 +12,7 @@ export class EthereumDriver {
     this.lastBlockId = startBlockId;
   }
 
-  private async get(blockId: number): Promise<Block> {
+  async get(blockId: number): Promise<Block> {
     return this.web3.eth.getBlock(blockId, true);
   }
 
