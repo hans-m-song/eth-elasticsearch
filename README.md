@@ -1,6 +1,5 @@
 # Prerequisites
 
-- node and npm
 - docker
 
 ## configuration
