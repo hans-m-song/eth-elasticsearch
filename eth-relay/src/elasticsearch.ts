@@ -1,16 +1,19 @@
 import {Client} from '@elastic/elasticsearch';
 import {BulkHelperOptions} from '@elastic/elasticsearch/lib/Helpers';
-import {BlockTransactionObject as Block} from 'web3-eth';
+import {BlockTransactionObject as Block, Transaction} from 'web3-eth';
 import {sleep} from './utils';
 
 // https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/7.x/api-reference.html
 // https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/current/client-helpers.html
 
-const onDocument: BulkHelperOptions<Block>['onDocument'] = (document) => ({
-  create: {_index: `eth-relay.block`, _type: 'block', _id: document.hash},
+type BulkEntry = Omit<Block, 'nonce' | 'transactions'> &
+  Transaction & {blockNonce: Block['nonce']};
+
+const onDocument: BulkHelperOptions<BulkEntry>['onDocument'] = ({hash}) => ({
+  create: {_index: `eth-relay.transaction`, _id: hash},
 });
 
-const onDrop: BulkHelperOptions<Block>['onDrop'] = (error) => {
+const onDrop: BulkHelperOptions<BulkEntry>['onDrop'] = (error) => {
   // ignore duplicate documents
   if (error.status === 409) {
     return;
@@ -39,7 +42,26 @@ export class ElasticSearchDriver {
 
   async submit(data: Block[]) {
     if (data.length < 1) return;
-    console.log(`submitting ${data.length} blocks`);
-    return this.client.helpers.bulk({datasource: data, onDocument, onDrop});
+
+    const datasource = data.flatMap(({transactions, ...block}) =>
+      transactions.map((transaction) => ({
+        ...block,
+        // hash of block will get overwritten by hash of transaction
+        // but transaction has a blockHash property
+        ...transaction,
+        // since both block and transaction have a nonce property
+        blockNonce: block.nonce,
+      }))
+    );
+
+    console.log(
+      `submitting ${datasource.length} transactions for ${data.length} blocks`
+    );
+
+    return this.client.helpers
+      .bulk<BulkEntry>({datasource, onDocument, onDrop})
+      .catch((error) => {
+        console.error(error);
+      });
   }
 }

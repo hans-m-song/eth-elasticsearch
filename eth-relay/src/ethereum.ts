@@ -12,7 +12,7 @@ export class EthereumDriver {
     this.lastBlockId = startBlockId;
   }
 
-  async get(blockId: number): Promise<Block> {
+  async get(blockId: number): Promise<Block | null> {
     return this.web3.eth.getBlock(blockId, true);
   }
 
@@ -24,8 +24,12 @@ export class EthereumDriver {
     if (!this.lastBlockId) {
       console.log(`fetching data for block ${blockId}`);
       const block = await this.get(blockId);
-      this.lastBlockId = blockId;
-      return [block];
+      if (block) {
+        this.lastBlockId = blockId;
+        return [block];
+      }
+
+      return [];
     }
 
     // no new blocks
@@ -40,10 +44,12 @@ export class EthereumDriver {
     console.log(`fetching data for blocks ${start} to ${blockId}`);
     for (let id = start; id <= blockId; id++) {
       const block = await this.get(blockId);
-      blocks.push(block);
+      if (block) {
+        this.lastBlockId = id;
+        blocks.push(block);
+      }
     }
 
-    this.lastBlockId = blockId;
     return blocks;
   }
 }
