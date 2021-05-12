@@ -3,7 +3,6 @@ import {BulkHelperOptions} from '@elastic/elasticsearch/lib/Helpers';
 import {BlockTransactionObject as Block, Transaction} from 'web3-eth';
 import {sleep} from './utils';
 import contractSpec from './contracts.json';
-
 const contracts = contractSpec as Record<string, string>;
 
 // https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/7.x/api-reference.html
@@ -11,7 +10,9 @@ const contracts = contractSpec as Record<string, string>;
 
 const ACTION = 'index';
 const INDEX = 'eth-relay-transaction';
-const WEI_TO_ETH = BigInt(1000000000000000000);
+const WEI_TO_GWEI = 1000000000;
+
+const weiToGwei = (value: string | number) => Number(value) / WEI_TO_GWEI;
 
 const pad = (value: number) => (value > 9 ? value : `0${value}`);
 
@@ -80,14 +81,13 @@ export class ElasticSearchDriver {
 
   async submit({transactions, nonce: blockNonce, ...block}: Block) {
     const datasource = transactions.map((transaction) => {
-      const gasPrice = Number(BigInt(transaction.gasPrice) / WEI_TO_ETH);
+      const gasPrice = weiToGwei(transaction.gasPrice);
       const timestamp = epochToDate(block.timestamp);
       const contractNameFrom = contracts[transaction.from] || 'Unknown';
       const contractNameTo =
         (transaction.to && contracts[transaction.to]) || 'Unknown';
       const ethFee = gasPrice * transaction.gas;
-      const value = Number(BigInt(transaction.value) / WEI_TO_ETH);
-
+      const value = weiToGwei(transaction.value);
       return {
         ...block,
         // hash of block will get overwritten by hash of transaction
