@@ -6,7 +6,8 @@ const {
   ETH_RPC_ADDR,
   ELASTICSEARCH_ADDR,
   RELAY_INTERVAL,
-  RELAY_START_BLOCK,
+  RELAY_BLOCK_START,
+  RELAY_BLOCK_END,
 } = process.env;
 
 if (!ETH_RPC_ADDR) {
@@ -21,5 +22,6 @@ export const constants = {
   ETH_RPC_ADDR,
   ELASTICSEARCH_ADDR,
   RELAY_INTERVAL: Number(RELAY_INTERVAL) || 5000,
-  RELAY_START_BLOCK: Number(RELAY_START_BLOCK) || undefined,
+  RELAY_BLOCK_START: Number(RELAY_BLOCK_START) || undefined,
+  RELAY_BLOCK_END: Number(RELAY_BLOCK_END) || undefined,
 };

@@ -16,7 +16,7 @@ export class EthereumDriver {
     return this.web3.eth.getBlock(blockId, true);
   }
 
-  async poll(): Promise<Block[]> {
+  async poll(submit: (data: Block) => Promise<void>): Promise<void> {
     const blockId = await this.web3.eth.getBlockNumber();
     console.log(`poll last: ${this.lastBlockId}, current: ${blockId}`);
 
@@ -25,31 +25,29 @@ export class EthereumDriver {
       console.log(`fetching data for block ${blockId}`);
       const block = await this.get(blockId);
       if (block) {
+        await submit(block);
         this.lastBlockId = blockId;
-        return [block];
+        return;
       }
 
-      return [];
+      return;
     }
 
     // no new blocks
     if (blockId === this.lastBlockId) {
       this.lastBlockId = blockId;
-      return [];
+      return;
     }
 
     // get new block data in (lastBlockId < id <= blockId)
-    const blocks = [];
     const start = this.lastBlockId + 1;
     console.log(`fetching data for blocks ${start} to ${blockId}`);
     for (let id = start; id <= blockId; id++) {
       const block = await this.get(blockId);
       if (block) {
+        await submit(block);
         this.lastBlockId = id;
-        blocks.push(block);
       }
     }
-
-    return blocks;
   }
 }

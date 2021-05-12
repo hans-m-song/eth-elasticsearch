@@ -12,8 +12,6 @@ services:
       - type: volume
         source: elasticsearch
         target: /usr/share/elasticsearch/data
-    networks:
-      - elasticnet
     ports:
       - 9200:9200
 
@@ -25,8 +23,6 @@ services:
         source: ./config/kibana.yml
         target: /usr/share/kibana/config/kibana.yml
         read_only: true
-    networks:
-      - elasticnet
     ports:
       - 5601:5601
     depends_on:
@@ -37,18 +33,14 @@ services:
     build:
       context: ./eth-relay
     environment:
-      ELASTICSEARCH_ADDR: http://elasticsearch:9200
+      ELASTICSEARCH_ADDR: ${ELASTICSEARCH_ADDR}
       ETH_RPC_ADDR: ${ETH_RPC_ADDR}
       RELAY_INTERVAL: ${RELAY_INTERVAL}
-    networks:
-      - elasticnet
+      RELAY_BLOCK_START: ${RELAY_BLOCK_START}
+      RELAY_BLOCK_END: ${RELAY_BLOCK_END}
     depends_on:
       - elasticsearch
-    restart: unless-stopped
-
-networks:
-  elasticnet:
-    driver: bridge
+    restart: on-failure
 
 volumes:
   elasticsearch:
