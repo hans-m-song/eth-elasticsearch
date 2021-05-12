@@ -11,6 +11,7 @@ const contracts = contractSpec as Record<string, string>;
 
 const ACTION = 'index';
 const INDEX = 'eth-relay-transaction';
+const WEI_TO_ETH = BigInt(1000000000000000000);
 
 const pad = (value: number) => (value > 9 ? value : `0${value}`);
 
@@ -19,28 +20,30 @@ const epochToDate = (epoch: string | number) => {
     return epoch;
   }
 
-  const date = new Date(0);
-  date.setUTCSeconds(epoch);
+  const datetime = new Date(0);
+  datetime.setUTCSeconds(epoch);
 
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  const hour = date.getHours();
-  const minute = date.getMinutes();
-  const second = date.getSeconds();
+  const year = datetime.getFullYear();
+  const month = datetime.getMonth() + 1;
+  const day = datetime.getDate();
 
-  return `${year}/${pad(month)}/${pad(day)} ${pad(hour)}:${pad(minute)}:${pad(
-    second
-  )}`;
+  const hour = datetime.getHours();
+  const minute = datetime.getMinutes();
+  const second = datetime.getSeconds();
+
+  const date = `${year}/${pad(month)}/${pad(day)}`;
+  const time = `${pad(hour)}:${pad(minute)}:${pad(second)}`;
+  return `${date} ${time}`;
 };
 
 type BulkEntry = Omit<Block, 'nonce' | 'transactions'> &
-  Omit<Transaction, 'gasPrice'> & {
+  Omit<Transaction, 'gasPrice' | 'value'> & {
     blockNonce: Block['nonce'];
     gasPrice: number;
     contractNameFrom: string;
     contractNameTo: string;
     ethFee: number;
+    value: number;
   };
 
 const onDocument: BulkHelperOptions<BulkEntry>['onDocument'] = ({hash}) => ({
@@ -77,12 +80,13 @@ export class ElasticSearchDriver {
 
   async submit({transactions, nonce: blockNonce, ...block}: Block) {
     const datasource = transactions.map((transaction) => {
-      const gasPrice = Number(transaction.gasPrice);
+      const gasPrice = Number(BigInt(transaction.gasPrice) / WEI_TO_ETH);
       const timestamp = epochToDate(block.timestamp);
       const contractNameFrom = contracts[transaction.from] || 'Unknown';
       const contractNameTo =
         (transaction.to && contracts[transaction.to]) || 'Unknown';
-      const ethFee = (gasPrice * transaction.gas) / 1000000000;
+      const ethFee = gasPrice * transaction.gas;
+      const value = Number(BigInt(transaction.value) / WEI_TO_ETH);
 
       return {
         ...block,
@@ -94,6 +98,7 @@ export class ElasticSearchDriver {
         contractNameFrom,
         contractNameTo,
         ethFee,
+        value,
         // since both block and transaction have a nonce property
         blockNonce,
       };
