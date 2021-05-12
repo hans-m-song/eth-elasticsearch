@@ -10,9 +10,14 @@ const contracts = contractSpec as Record<string, string>;
 
 const ACTION = 'index';
 const INDEX = 'eth-relay-transaction';
+const WEI_TO_ETH = 1000000000000000000;
 const WEI_TO_GWEI = 1000000000;
 
-const weiToGwei = (value: string | number) => Number(value) / WEI_TO_GWEI;
+const weiToEth = (value: string | number) =>
+  Number((Number(value) / WEI_TO_ETH).toFixed(6));
+
+const weiToGwei = (value: string | number) =>
+  Number((Number(value) / WEI_TO_GWEI).toFixed(6));
 
 const pad = (value: number) => (value > 9 ? value : `0${value}`);
 
@@ -86,8 +91,10 @@ export class ElasticSearchDriver {
       const contractNameFrom = contracts[transaction.from] || 'Unknown';
       const contractNameTo =
         (transaction.to && contracts[transaction.to]) || 'Unknown';
-      const ethFee = gasPrice * transaction.gas;
-      const value = weiToGwei(transaction.value);
+      const ethFee = gasPrice * weiToGwei(transaction.gas);
+      const value = weiToEth(transaction.value);
+      const gasLimit = weiToGwei(block.gasLimit);
+      const gasUsed = weiToGwei(block.gasUsed);
       return {
         ...block,
         // hash of block will get overwritten by hash of transaction
@@ -99,6 +106,8 @@ export class ElasticSearchDriver {
         contractNameTo,
         ethFee,
         value,
+        gasLimit,
+        gasUsed,
         // since both block and transaction have a nonce property
         blockNonce,
       };
