@@ -20,7 +20,7 @@ const epochToDate = (epoch: string | number) => {
   date.setUTCSeconds(epoch);
 
   const year = date.getFullYear();
-  const month = date.getMonth();
+  const month = date.getMonth() + 1;
   const day = date.getDate();
   const hour = date.getHours();
   const minute = date.getMinutes();
