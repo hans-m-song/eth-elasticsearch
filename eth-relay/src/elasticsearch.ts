@@ -2,6 +2,9 @@ import {Client} from '@elastic/elasticsearch';
 import {BulkHelperOptions} from '@elastic/elasticsearch/lib/Helpers';
 import {BlockTransactionObject as Block, Transaction} from 'web3-eth';
 import {sleep} from './utils';
+import contractSpec from './contracts.json';
+
+const contracts = contractSpec as Record<string, string>;
 
 // https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/7.x/api-reference.html
 // https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/current/client-helpers.html
@@ -35,6 +38,9 @@ type BulkEntry = Omit<Block, 'nonce' | 'transactions'> &
   Omit<Transaction, 'gasPrice'> & {
     blockNonce: Block['nonce'];
     gasPrice: number;
+    contractNameFrom: string;
+    contractNameTo: string;
+    ethFee: number;
   };
 
 const onDocument: BulkHelperOptions<BulkEntry>['onDocument'] = ({hash}) => ({
@@ -69,17 +75,29 @@ export class ElasticSearchDriver {
     });
   }
 
-  async submit({transactions, ...block}: Block) {
-    const datasource = transactions.map((transaction) => ({
-      ...block,
-      // hash of block will get overwritten by hash of transaction
-      // but transaction has a blockHash property
-      ...transaction,
-      gasPrice: Number(transaction.gasPrice),
-      timestamp: epochToDate(block.timestamp),
-      // since both block and transaction have a nonce property
-      blockNonce: block.nonce,
-    }));
+  async submit({transactions, nonce: blockNonce, ...block}: Block) {
+    const datasource = transactions.map((transaction) => {
+      const gasPrice = Number(transaction.gasPrice);
+      const timestamp = epochToDate(block.timestamp);
+      const contractNameFrom = contracts[transaction.from] || 'Unknown';
+      const contractNameTo =
+        (transaction.to && contracts[transaction.to]) || 'Unknown';
+      const ethFee = (gasPrice * transaction.gas) / 1000000000;
+
+      return {
+        ...block,
+        // hash of block will get overwritten by hash of transaction
+        // but transaction has a blockHash property
+        ...transaction,
+        gasPrice,
+        timestamp,
+        contractNameFrom,
+        contractNameTo,
+        ethFee,
+        // since both block and transaction have a nonce property
+        blockNonce,
+      };
+    });
 
     console.log(`submitting ${datasource.length} transactions`);
 
