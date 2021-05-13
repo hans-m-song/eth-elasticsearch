@@ -4,6 +4,7 @@ import {
   Transaction as EthTransaction,
   TransactionReceipt,
 } from 'web3-eth';
+import {sleep} from './utils';
 
 export type Transaction = {
   gasUsed?: TransactionReceipt['gasUsed'];
@@ -22,6 +23,16 @@ export class EthereumDriver {
   constructor(ethRpcAddr: string, startBlockId?: number) {
     this.web3 = new Web3(ethRpcAddr);
     this.lastBlockId = startBlockId;
+  }
+
+  async ping(retries = 30) {
+    console.log('pinging geth instance...');
+    const blockId = await this.web3.eth.getBlockNumber();
+    // geth is still synchronising
+    if (blockId < 1) {
+      await sleep(5000);
+      await this.ping(retries - 1);
+    }
   }
 
   async get(blockId: number): Promise<Block | null> {

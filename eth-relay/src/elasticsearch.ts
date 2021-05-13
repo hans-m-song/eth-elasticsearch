@@ -79,7 +79,7 @@ export class ElasticSearchDriver {
         throw new Error('Retries exceeded waiting for elasticsearch');
       }
 
-      await sleep(2000);
+      await sleep(5000);
       await this.ping(retries - 1);
     });
   }

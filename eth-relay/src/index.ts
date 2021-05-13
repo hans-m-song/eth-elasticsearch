@@ -21,7 +21,7 @@ console.log(
 
   const es = new ElasticSearchDriver(constants.ELASTICSEARCH_ADDR);
 
-  await es.ping();
+  await Promise.all([es.ping(), eth.ping()]);
 
   // get blocks within range
   if (constants.RELAY_BLOCK_START && constants.RELAY_BLOCK_END) {
