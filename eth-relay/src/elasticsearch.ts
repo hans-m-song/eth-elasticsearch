@@ -1,6 +1,6 @@
 import {Client} from '@elastic/elasticsearch';
 import {BulkHelperOptions} from '@elastic/elasticsearch/lib/Helpers';
-import {BlockTransactionObject as Block, Transaction} from 'web3-eth';
+import {Block, Transaction} from './ethereum';
 import {sleep} from './utils';
 import contractSpec from './contracts.json';
 const contracts = contractSpec as Record<string, string>;
@@ -94,7 +94,7 @@ export class ElasticSearchDriver {
       const ethFee = gasPrice * weiToGwei(transaction.gas);
       const value = weiToEth(transaction.value);
       const gasLimit = weiToGwei(block.gasLimit);
-      const gasUsed = weiToGwei(block.gasUsed);
+      const gasUsed = transaction.gasUsed || 0;
       return {
         ...block,
         // hash of block will get overwritten by hash of transaction
