@@ -13,7 +13,7 @@ const INDEX = 'eth-relay-transaction';
 const WEI_TO_ETH = 1000000000000000000;
 const WEI_TO_GWEI = 1000000000;
 
-const round = (value: number) => Number(value.toFixed(6));
+const round = (value: number) => Number(value.toFixed(8));
 
 const weiToEth = (value: string | number) => Number(value) / WEI_TO_ETH;
 
@@ -86,15 +86,17 @@ export class ElasticSearchDriver {
 
   async submit({transactions, nonce: blockNonce, ...block}: Block) {
     const datasource = transactions.map((transaction) => {
-      const gasPrice = weiToGwei(transaction.gasPrice);
       const timestamp = epochToDate(block.timestamp);
       const contractNameFrom = contracts[transaction.from] || 'Unknown';
       const contractNameTo =
         (transaction.to && contracts[transaction.to]) || 'Unknown';
-      const gasUsed = weiToGwei(transaction.gasUsed || 0);
-      const ethFee = gasPrice * gasUsed;
+
       const value = weiToEth(transaction.value);
+      const gasPrice = weiToGwei(transaction.gasPrice);
+      const gasUsed = weiToGwei(transaction.gasUsed || 0);
       const gasLimit = weiToGwei(block.gasLimit);
+
+      const ethFee = gasPrice * gasUsed;
 
       return {
         ...block,
