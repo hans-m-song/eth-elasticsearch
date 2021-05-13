@@ -13,11 +13,11 @@ const INDEX = 'eth-relay-transaction';
 const WEI_TO_ETH = 1000000000000000000;
 const WEI_TO_GWEI = 1000000000;
 
-const weiToEth = (value: string | number) =>
-  Number((Number(value) / WEI_TO_ETH).toFixed(6));
+const round = (value: number) => Number(value.toFixed(6));
 
-const weiToGwei = (value: string | number) =>
-  Number((Number(value) / WEI_TO_GWEI).toFixed(6));
+const weiToEth = (value: string | number) => Number(value) / WEI_TO_ETH;
+
+const weiToGwei = (value: string | number) => Number(value) / WEI_TO_GWEI;
 
 const pad = (value: number) => (value > 9 ? value : `0${value}`);
 
@@ -91,23 +91,24 @@ export class ElasticSearchDriver {
       const contractNameFrom = contracts[transaction.from] || 'Unknown';
       const contractNameTo =
         (transaction.to && contracts[transaction.to]) || 'Unknown';
-      const ethFee = gasPrice * weiToGwei(transaction.gas);
+      const gasUsed = weiToGwei(transaction.gasUsed || 0);
+      const ethFee = gasPrice * gasUsed;
       const value = weiToEth(transaction.value);
       const gasLimit = weiToGwei(block.gasLimit);
-      const gasUsed = transaction.gasUsed || 0;
+
       return {
         ...block,
         // hash of block will get overwritten by hash of transaction
         // but transaction has a blockHash property
         ...transaction,
-        gasPrice,
+        gasPrice: round(gasPrice),
         timestamp,
         contractNameFrom,
         contractNameTo,
-        ethFee,
-        value,
-        gasLimit,
-        gasUsed,
+        ethFee: round(ethFee),
+        value: round(value),
+        gasLimit: round(gasLimit),
+        gasUsed: round(gasUsed),
         // since both block and transaction have a nonce property
         blockNonce,
       };
