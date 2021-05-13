@@ -10,8 +10,8 @@ const contracts = contractSpec as Record<string, string>;
 
 const ACTION = 'index';
 const INDEX = 'eth-relay-transaction';
-const WEI_TO_ETH = 1000000000000000000;
-const WEI_TO_GWEI = 1000000000;
+const WEI_TO_ETH = 1;
+const WEI_TO_GWEI = 1;
 
 const round = (value: number) => Number(value.toFixed(8));
 
