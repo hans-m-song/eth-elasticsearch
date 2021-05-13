@@ -28,6 +28,18 @@ services:
     depends_on:
       - elasticsearch
 
+  geth:
+    container_name: geth
+    image: ethereum/client-go
+    volumes:
+      - type: volume
+        source: geth
+        target: /root
+    ports:
+      - 8545:8545
+      - 30303:30303
+    command: --http --http.addr geth --syncmode light --http.corsdomain * --http.vhosts *
+
   eth-relay:
     container_name: eth-relay
     build:
@@ -44,3 +56,4 @@ services:
 
 volumes:
   elasticsearch:
+  geth:
