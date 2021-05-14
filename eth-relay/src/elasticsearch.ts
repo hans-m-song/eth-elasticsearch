@@ -85,6 +85,10 @@ export class ElasticSearchDriver {
   }
 
   async submit({transactions, nonce: blockNonce, ...block}: Block) {
+    console.log(
+      `submitting ${transactions.length} transactions for block ${block.hash}`
+    );
+
     const datasource = transactions.map((transaction) => {
       const timestamp = epochToDate(block.timestamp);
       const contractNameFrom = contracts[transaction.from] || 'Unknown';
@@ -115,8 +119,6 @@ export class ElasticSearchDriver {
         blockNonce,
       };
     });
-
-    console.log(`submitting ${datasource.length} transactions`);
 
     await this.client.helpers
       .bulk<BulkEntry>({datasource, onDocument, onDrop})
